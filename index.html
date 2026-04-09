@@ -20,25 +20,244 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useContext, createContext, useEffect } = React;
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  CONFIGURACIÓN: Las 7 etapas del flujo de compras SSOMA
+    //  TRADUCCIONES  (ES · EN · ZH)
     // ═══════════════════════════════════════════════════════════════════════════
-    const STAGES = [
-      { id: 0, key: 'necesidad',      label: 'Necesidad',               icon: '📋', desc: 'Identificación y registro de la necesidad.' },
-      { id: 1, key: 'requerimientos', label: 'Armado de Requerimientos', icon: '📝', desc: 'Especificaciones técnicas y cantidades.' },
-      { id: 2, key: 'precios',        label: 'Precios',                  icon: '💰', desc: 'Estimación del presupuesto inicial.' },
-      { id: 3, key: 'proveedores',    label: 'Proveedores',              icon: '🏢', desc: 'Búsqueda y recepción de propuestas.' },
-      { id: 4, key: 'comparativo',    label: 'Comparativo',              icon: '⚖️', desc: 'Elaboración y aprobación del cuadro comparativo.' },
-      { id: 5, key: 'solicitud',      label: 'Solicitud',                icon: '📤', desc: 'Generación de la orden interna de compra.' },
-      { id: 6, key: 'procura',        label: 'Procura',                  icon: '✅', desc: 'Subida al sistema general de compras/procura.', final: true },
-    ];
+    const TRANSLATIONS = {
+      es: {
+        // App shell
+        appSubtitle:   'Gestión de Compras',
+        navDashboard:  'Dashboard',
+        navRequests:   'Solicitudes',
+        today:         'Hoy',
+        // Stages
+        stages: [
+          { label: 'Necesidad',               desc: 'Identificación y registro de la necesidad.' },
+          { label: 'Armado de Requerimientos', desc: 'Especificaciones técnicas y cantidades.' },
+          { label: 'Precios',                  desc: 'Estimación del presupuesto inicial.' },
+          { label: 'Proveedores',              desc: 'Búsqueda y recepción de propuestas.' },
+          { label: 'Comparativo',              desc: 'Elaboración y aprobación del cuadro comparativo.' },
+          { label: 'Solicitud',                desc: 'Generación de la orden interna de compra.' },
+          { label: 'Procura',                  desc: 'Subida al sistema general de compras/procura.' },
+        ],
+        // Urgency
+        urgency: { Alta: 'Alta', Media: 'Media', Baja: 'Baja' },
+        // Dashboard
+        pageTitle:       'Panel de Compras',
+        pageSubtitle:    'Seguimiento de solicitudes del departamento SSOMA',
+        records:         'registros',
+        newRequest:      '+ Nueva Solicitud',
+        // Stats
+        statTotal:       'Total Solicitudes',
+        statInProgress:  'En Progreso',
+        statCompleted:   'Finalizadas',
+        statHighUrgency: 'Urgencia Alta',
+        statAvgProgress: 'Avance Promedio',
+        // Filters
+        searchPlaceholder: 'Buscar por título, ID o responsable…',
+        filterAll:   'Todos',
+        allStages:   'Todas las etapas',
+        viewTable:   '☰ Tabla',
+        viewKanban:  '⊞ Kanban',
+        // Empty state
+        emptyTitle: 'No se encontraron solicitudes',
+        emptyHint:  'Prueba ajustando los filtros o el término de búsqueda',
+        // Footer legend
+        legendTitle:     'Referencia de Etapas',
+        legendCompleted: 'Completada',
+        legendCurrent:   'Etapa actual',
+        legendPending:   'Pendiente',
+        // Table
+        colTitle:       'Título',
+        colUrgency:     'Urgencia',
+        colResponsible: 'Responsable',
+        colCreated:     'Creado',
+        colProgress:    'Progreso',
+        viewDetail:     'Ver detalle →',
+        // Kanban
+        kanbanEmpty: 'Sin solicitudes',
+        // Detail modal
+        stepOf:           (c, t) => `Paso ${c} / ${t}`,
+        closeTitle:       'Cerrar',
+        tabProgress:      '📊 Progreso',
+        tabNotes:         '📒 Notas por Etapa',
+        badgeCurrent:     'Etapa actual',
+        badgeCompleted:   'Completada',
+        badgePending:     'Pendiente',
+        noNotes:          'Sin notas registradas para esta etapa.',
+        stageOf:          (c, t) => `Etapa ${c} de ${t}`,
+        advanceTo:        (l) => `Avanzar a "${l}" →`,
+        processCompleted: '✅ Proceso completado en Procura',
+        notesCurrent:     '● Etapa actual',
+        notesCompleted:   '✓ Completada',
+        // New purchase modal
+        newModalTitle:        '+ Nueva Solicitud de Compra',
+        labelTitle:           'Título de la compra *',
+        labelUrgency:         'Urgencia',
+        labelResponsible:     'Responsable *',
+        labelNotes:           'Descripción de la necesidad',
+        placeholderTitle:     'Ej: EPPs para trabajo en caliente',
+        placeholderResponsible: 'Nombre completo',
+        placeholderNotes:     'Detalle la necesidad identificada...',
+        btnCancel: 'Cancelar',
+        btnCreate: 'Crear Solicitud',
+        locale:    'es-PE',
+      },
 
-    const URGENCY_CFG = {
-      Alta:  { label: 'Alta',  cls: 'bg-red-100 text-red-700 border-red-200',     dot: 'bg-red-500' },
-      Media: { label: 'Media', cls: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
-      Baja:  { label: 'Baja',  cls: 'bg-sky-100 text-sky-700 border-sky-200',     dot: 'bg-sky-500' },
+      en: {
+        appSubtitle:   'Purchase Management',
+        navDashboard:  'Dashboard',
+        navRequests:   'Requests',
+        today:         'Today',
+        stages: [
+          { label: 'Need',             desc: 'Identification and registration of the purchase need.' },
+          { label: 'Requirements',     desc: 'Technical specifications and quantities.' },
+          { label: 'Pricing',          desc: 'Initial budget estimation.' },
+          { label: 'Suppliers',        desc: 'Search and receipt of supplier proposals.' },
+          { label: 'Comparison',       desc: 'Preparation and approval of the comparative table.' },
+          { label: 'Purchase Request', desc: 'Generation of the internal purchase order.' },
+          { label: 'Procurement',      desc: 'Upload to the general procurement system.' },
+        ],
+        urgency: { Alta: 'High', Media: 'Medium', Baja: 'Low' },
+        pageTitle:       'Purchase Dashboard',
+        pageSubtitle:    'Tracking of SSOMA department purchase requests',
+        records:         'records',
+        newRequest:      '+ New Request',
+        statTotal:       'Total Requests',
+        statInProgress:  'In Progress',
+        statCompleted:   'Completed',
+        statHighUrgency: 'High Urgency',
+        statAvgProgress: 'Avg. Progress',
+        searchPlaceholder: 'Search by title, ID or responsible…',
+        filterAll:   'All',
+        allStages:   'All stages',
+        viewTable:   '☰ Table',
+        viewKanban:  '⊞ Kanban',
+        emptyTitle: 'No requests found',
+        emptyHint:  'Try adjusting the filters or search term',
+        legendTitle:     'Stage Reference',
+        legendCompleted: 'Completed',
+        legendCurrent:   'Current stage',
+        legendPending:   'Pending',
+        colTitle:       'Title',
+        colUrgency:     'Urgency',
+        colResponsible: 'Responsible',
+        colCreated:     'Created',
+        colProgress:    'Progress',
+        viewDetail:     'View detail →',
+        kanbanEmpty: 'No requests',
+        stepOf:           (c, t) => `Step ${c} / ${t}`,
+        closeTitle:       'Close',
+        tabProgress:      '📊 Progress',
+        tabNotes:         '📒 Notes by Stage',
+        badgeCurrent:     'Current stage',
+        badgeCompleted:   'Completed',
+        badgePending:     'Pending',
+        noNotes:          'No notes recorded for this stage.',
+        stageOf:          (c, t) => `Stage ${c} of ${t}`,
+        advanceTo:        (l) => `Advance to "${l}" →`,
+        processCompleted: '✅ Process completed in Procurement',
+        notesCurrent:     '● Current stage',
+        notesCompleted:   '✓ Completed',
+        newModalTitle:        '+ New Purchase Request',
+        labelTitle:           'Purchase title *',
+        labelUrgency:         'Urgency',
+        labelResponsible:     'Responsible *',
+        labelNotes:           'Need description',
+        placeholderTitle:     'E.g.: PPE for hot work',
+        placeholderResponsible: 'Full name',
+        placeholderNotes:     'Describe the identified need...',
+        btnCancel: 'Cancel',
+        btnCreate: 'Create Request',
+        locale:    'en-US',
+      },
+
+      zh: {
+        appSubtitle:   '采购管理',
+        navDashboard:  '仪表板',
+        navRequests:   '申请',
+        today:         '今天',
+        stages: [
+          { label: '需求识别', desc: '识别并记录采购需求。' },
+          { label: '需求详述', desc: '技术规格和数量说明。' },
+          { label: '价格估算', desc: '初始预算估算。' },
+          { label: '供应商',   desc: '搜索并接收供应商报价。' },
+          { label: '比较分析', desc: '编制并批准供应商比较表。' },
+          { label: '采购申请', desc: '生成内部采购订单。' },
+          { label: '采购完成', desc: '上传至企业总采购系统。' },
+        ],
+        urgency: { Alta: '高', Media: '中', Baja: '低' },
+        pageTitle:       '采购看板',
+        pageSubtitle:    'SSOMA 部门采购申请跟踪',
+        records:         '条记录',
+        newRequest:      '+ 新建申请',
+        statTotal:       '申请总数',
+        statInProgress:  '进行中',
+        statCompleted:   '已完成',
+        statHighUrgency: '高优先级',
+        statAvgProgress: '平均进度',
+        searchPlaceholder: '按标题、编号或负责人搜索…',
+        filterAll:   '全部',
+        allStages:   '所有阶段',
+        viewTable:   '☰ 表格',
+        viewKanban:  '⊞ 看板',
+        emptyTitle: '未找到申请',
+        emptyHint:  '请尝试调整筛选条件或搜索词',
+        legendTitle:     '阶段说明',
+        legendCompleted: '已完成',
+        legendCurrent:   '当前阶段',
+        legendPending:   '待处理',
+        colTitle:       '标题',
+        colUrgency:     '紧急程度',
+        colResponsible: '负责人',
+        colCreated:     '创建日期',
+        colProgress:    '进度',
+        viewDetail:     '查看详情 →',
+        kanbanEmpty: '暂无申请',
+        stepOf:           (c, tot) => `步骤 ${c} / ${tot}`,
+        closeTitle:       '关闭',
+        tabProgress:      '📊 进度',
+        tabNotes:         '📒 各阶段备注',
+        badgeCurrent:     '当前阶段',
+        badgeCompleted:   '已完成',
+        badgePending:     '待处理',
+        noNotes:          '该阶段暂无备注记录。',
+        stageOf:          (c, tot) => `第 ${c} / ${tot} 阶段`,
+        advanceTo:        (l) => `推进至「${l}」→`,
+        processCompleted: '✅ 采购流程已完成',
+        notesCurrent:     '● 当前阶段',
+        notesCompleted:   '✓ 已完成',
+        newModalTitle:        '+ 新建采购申请',
+        labelTitle:           '采购标题 *',
+        labelUrgency:         '紧急程度',
+        labelResponsible:     '负责人 *',
+        labelNotes:           '需求描述',
+        placeholderTitle:     '例：高空作业个人防护装备',
+        placeholderResponsible: '姓名',
+        placeholderNotes:     '请描述已识别的需求...',
+        btnCancel: '取消',
+        btnCreate: '创建申请',
+        locale:    'zh-CN',
+      },
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  CONTEXT
+    // ═══════════════════════════════════════════════════════════════════════════
+    const LangContext = createContext('es');
+    const useLang = () => TRANSLATIONS[useContext(LangContext)];
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  STAGE ICONS (immutable, language-independent)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const STAGE_ICONS = ['📋','📝','💰','🏢','⚖️','📤','✅'];
+
+    const URGENCY_CLS = {
+      Alta:  { cls: 'bg-red-100 text-red-700 border-red-200',     dot: 'bg-red-500' },
+      Media: { cls: 'bg-amber-100 text-amber-700 border-amber-200', dot: 'bg-amber-500' },
+      Baja:  { cls: 'bg-sky-100 text-sky-700 border-sky-200',     dot: 'bg-sky-500' },
     };
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -49,7 +268,7 @@
         id: 'SSOMA-REQ-001',
         title: 'EPPs para trabajo en altura',
         urgency: 'Alta',
-        stage: 4,           // ← Ejemplo en Comparativo (paso 5 visual)
+        stage: 4,
         responsible: 'Carlos Mendoza',
         createdAt: '2026-03-10',
         notes: {
@@ -145,26 +364,58 @@
       return 'pending';
     };
 
-    const progressPct = (stage) => Math.round((stage / (STAGES.length - 1)) * 100);
+    const progressPct = (stage) => Math.round((stage / 6) * 100);
 
     let nextId = INITIAL_PURCHASES.length + 1;
     const genId = () => `SSOMA-REQ-${String(nextId++).padStart(3, '0')}`;
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  LANGUAGE SWITCHER
+    // ═══════════════════════════════════════════════════════════════════════════
+    const LANGS = [
+      { code: 'es', flag: '🇪🇸', label: 'ES' },
+      { code: 'en', flag: '🇬🇧', label: 'EN' },
+      { code: 'zh', flag: '🇨🇳', label: '中文' },
+    ];
+
+    function LangSwitcher({ lang, setLang }) {
+      return (
+        <div className="flex items-center gap-0.5 bg-slate-800 rounded-xl p-1">
+          {LANGS.map(({ code, flag, label }) => (
+            <button
+              key={code}
+              onClick={() => setLang(code)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all
+                ${lang === code
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'}
+              `}
+            >
+              <span>{flag}</span>
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+      );
+    }
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  COMPONENTES REUTILIZABLES
     // ═══════════════════════════════════════════════════════════════════════════
 
     function UrgencyBadge({ urgency }) {
-      const cfg = URGENCY_CFG[urgency] || URGENCY_CFG.Baja;
+      const t   = useLang();
+      const cfg = URGENCY_CLS[urgency] || URGENCY_CLS.Baja;
       return (
         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${cfg.cls}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-          {urgency}
+          {t.urgency[urgency]}
         </span>
       );
     }
 
     function ProgressBar({ stage }) {
+      const t   = useLang();
       const pct = progressPct(stage);
       const color = stage === 6 ? 'bg-emerald-500'
                   : stage >= 4 ? 'bg-blue-500'
@@ -173,31 +424,27 @@
       return (
         <div className="w-full min-w-[160px]">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-slate-500 truncate max-w-[120px]">{STAGES[stage].label}</span>
+            <span className="text-xs text-slate-500 truncate max-w-[120px]">{t.stages[stage].label}</span>
             <span className="text-xs font-bold text-slate-600 ml-2">{pct}%</span>
           </div>
           <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${color}`}
-              style={{ width: pct + '%' }}
-            />
+            <div className={`h-full rounded-full transition-all duration-700 ${color}`} style={{ width: pct + '%' }} />
           </div>
         </div>
       );
     }
 
-    // ── Stepper horizontal completo ──────────────────────────────────────────
     function Stepper({ stage }) {
+      const t = useLang();
       return (
         <div className="w-full overflow-x-auto">
           <div className="flex items-start min-w-[560px]">
-            {STAGES.map((s, idx) => {
+            {t.stages.map((s, idx) => {
               const status = stageStatus(stage, idx);
-              const isLast = idx === STAGES.length - 1;
+              const isLast = idx === t.stages.length - 1;
               return (
-                <React.Fragment key={s.id}>
+                <React.Fragment key={idx}>
                   <div className="flex flex-col items-center flex-shrink-0" style={{ width: '80px' }}>
-                    {/* Círculo */}
                     <div className={`
                       w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all
                       ${status === 'completed' ? 'bg-emerald-500 text-white shadow-md' : ''}
@@ -206,9 +453,8 @@
                     `}>
                       {status === 'completed' ? '✓' : idx + 1}
                     </div>
-                    {/* Etiqueta */}
                     <div className="mt-2 text-center">
-                      <span className="text-lg">{s.icon}</span>
+                      <span className="text-lg">{STAGE_ICONS[idx]}</span>
                       <p className={`text-[11px] font-semibold leading-tight mt-0.5
                         ${status === 'current'   ? 'text-blue-700' : ''}
                         ${status === 'completed' ? 'text-emerald-700' : ''}
@@ -216,16 +462,13 @@
                       `}>{s.label}</p>
                       {status === 'current' && (
                         <span className="inline-block mt-1 px-1.5 py-0.5 bg-blue-100 text-blue-600 text-[9px] rounded-full font-bold uppercase tracking-wide">
-                          Actual
+                          {t.badgeCurrent}
                         </span>
                       )}
                     </div>
                   </div>
-                  {/* Línea conectora */}
                   {!isLast && (
-                    <div className={`flex-1 h-0.5 mt-5 mx-1
-                      ${status === 'completed' ? 'bg-emerald-400' : 'bg-slate-200'}
-                    `} />
+                    <div className={`flex-1 h-0.5 mt-5 mx-1 ${status === 'completed' ? 'bg-emerald-400' : 'bg-slate-200'}`} />
                   )}
                 </React.Fragment>
               );
@@ -239,8 +482,8 @@
     //  MODAL DE DETALLE
     // ═══════════════════════════════════════════════════════════════════════════
     function DetailModal({ purchase, onClose, onAdvance }) {
+      const t          = useLang();
       const [tab, setTab] = useState('stepper');
-      const [noteInput, setNoteInput] = useState('');
       const canAdvance = purchase.stage < 6;
 
       return (
@@ -250,7 +493,7 @@
             className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            {/* ── Cabecera del modal ── */}
+            {/* Header */}
             <div className="bg-gradient-to-r from-slate-900 to-slate-700 text-white p-6 rounded-t-2xl flex-shrink-0">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
@@ -262,20 +505,16 @@
                   <div className="flex flex-wrap items-center gap-4 mt-2 text-slate-300 text-sm">
                     <span>👤 {purchase.responsible}</span>
                     <span>📅 {purchase.createdAt}</span>
-                    <span>📊 Paso {purchase.stage + 1} / {STAGES.length}</span>
+                    <span>📊 {t.stepOf(purchase.stage + 1, t.stages.length)}</span>
                   </div>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="text-slate-400 hover:text-white transition-colors text-2xl leading-none flex-shrink-0"
-                  title="Cerrar"
-                >✕</button>
+                <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-2xl leading-none flex-shrink-0" title={t.closeTitle}>✕</button>
               </div>
             </div>
 
-            {/* ── Tabs ── */}
+            {/* Tabs */}
             <div className="flex gap-1 px-6 pt-4 pb-0 bg-white border-b border-slate-100 flex-shrink-0">
-              {[['stepper', '📊 Progreso'], ['notes', '📒 Notas por Etapa']].map(([key, label]) => (
+              {[[t.tabProgress, 'stepper'], [t.tabNotes, 'notes']].map(([label, key]) => (
                 <button key={key} onClick={() => setTab(key)}
                   className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-all -mb-px
                     ${tab === key
@@ -286,22 +525,19 @@
               ))}
             </div>
 
-            {/* ── Cuerpo scrollable ── */}
+            {/* Body */}
             <div className="overflow-y-auto flex-1 p-6">
 
-              {/* ─ TAB: STEPPER ─ */}
               {tab === 'stepper' && (
                 <>
                   <div className="mb-8 px-2">
                     <Stepper stage={purchase.stage} />
                   </div>
-
-                  {/* Tarjetas de etapa */}
                   <div className="space-y-2">
-                    {STAGES.map((s, idx) => {
+                    {t.stages.map((s, idx) => {
                       const status = stageStatus(purchase.stage, idx);
                       return (
-                        <div key={s.id} className={`rounded-xl border p-4 transition-all
+                        <div key={idx} className={`rounded-xl border p-4 transition-all
                           ${status === 'current'   ? 'border-blue-300 bg-blue-50 shadow-sm' : ''}
                           ${status === 'completed' ? 'border-emerald-200 bg-emerald-50/60' : ''}
                           ${status === 'pending'   ? 'border-slate-200 bg-slate-50/80' : ''}
@@ -316,21 +552,15 @@
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
-                                <span className="text-base">{s.icon}</span>
+                                <span className="text-base">{STAGE_ICONS[idx]}</span>
                                 <span className={`font-semibold text-sm
                                   ${status === 'current'   ? 'text-blue-800' : ''}
                                   ${status === 'completed' ? 'text-emerald-800' : ''}
                                   ${status === 'pending'   ? 'text-slate-400' : ''}
                                 `}>{s.label}</span>
-                                {status === 'current' && (
-                                  <span className="px-2 py-0.5 bg-blue-200 text-blue-800 text-xs rounded-full font-semibold">Etapa actual</span>
-                                )}
-                                {status === 'completed' && (
-                                  <span className="px-2 py-0.5 bg-emerald-200 text-emerald-800 text-xs rounded-full font-semibold">Completada</span>
-                                )}
-                                {status === 'pending' && (
-                                  <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-xs rounded-full">Pendiente</span>
-                                )}
+                                {status === 'current'   && <span className="px-2 py-0.5 bg-blue-200 text-blue-800 text-xs rounded-full font-semibold">{t.badgeCurrent}</span>}
+                                {status === 'completed' && <span className="px-2 py-0.5 bg-emerald-200 text-emerald-800 text-xs rounded-full font-semibold">{t.badgeCompleted}</span>}
+                                {status === 'pending'   && <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-xs rounded-full">{t.badgePending}</span>}
                               </div>
                               <p className="text-xs text-slate-500 mb-1 italic">{s.desc}</p>
                               {purchase.notes[idx] && (
@@ -347,29 +577,28 @@
                 </>
               )}
 
-              {/* ─ TAB: NOTAS ─ */}
               {tab === 'notes' && (
                 <div className="space-y-4">
-                  {STAGES.map((s, idx) => {
-                    const status = stageStatus(purchase.stage, idx);
+                  {t.stages.map((s, idx) => {
+                    const status    = stageStatus(purchase.stage, idx);
                     const isPending = status === 'pending';
                     return (
-                      <div key={s.id} className={`rounded-xl border p-4
+                      <div key={idx} className={`rounded-xl border p-4
                         ${status === 'current'   ? 'border-blue-200 bg-blue-50' : ''}
                         ${status === 'completed' ? 'border-emerald-200 bg-white' : ''}
                         ${isPending             ? 'border-dashed border-slate-200 opacity-50' : ''}
                       `}>
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">{s.icon}</span>
+                          <span className="text-lg">{STAGE_ICONS[idx]}</span>
                           <span className="font-semibold text-sm text-slate-700">{s.label}</span>
-                          {status === 'completed' && <span className="ml-auto text-emerald-600 text-xs font-medium">✓ Completada</span>}
-                          {status === 'current'   && <span className="ml-auto text-blue-600 text-xs font-medium">● Etapa actual</span>}
-                          {isPending              && <span className="ml-auto text-slate-400 text-xs">Pendiente</span>}
+                          {status === 'completed' && <span className="ml-auto text-emerald-600 text-xs font-medium">{t.notesCompleted}</span>}
+                          {status === 'current'   && <span className="ml-auto text-blue-600 text-xs font-medium">{t.notesCurrent}</span>}
+                          {isPending              && <span className="ml-auto text-slate-400 text-xs">{t.badgePending}</span>}
                         </div>
                         <p className="text-sm text-slate-600">
                           {purchase.notes[idx]
                             ? purchase.notes[idx]
-                            : <span className="italic text-slate-400">Sin notas registradas para esta etapa.</span>
+                            : <span className="italic text-slate-400">{t.noNotes}</span>
                           }
                         </p>
                       </div>
@@ -379,22 +608,22 @@
               )}
             </div>
 
-            {/* ── Footer de acción ── */}
+            {/* Footer */}
             <div className="flex-shrink-0 px-6 py-4 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex items-center justify-between gap-4">
               <div className="text-sm text-slate-500">
-                <span className="font-medium text-slate-700">{STAGES[purchase.stage].icon} {STAGES[purchase.stage].label}</span>
-                {' '}— Etapa {purchase.stage + 1} de {STAGES.length}
+                <span className="font-medium text-slate-700">{STAGE_ICONS[purchase.stage]} {t.stages[purchase.stage].label}</span>
+                {' '}— {t.stageOf(purchase.stage + 1, t.stages.length)}
               </div>
               {canAdvance ? (
                 <button
                   onClick={() => onAdvance(purchase.id)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-semibold rounded-xl shadow-md transition-all"
                 >
-                  Avanzar a "{STAGES[purchase.stage + 1].label}" →
+                  {t.advanceTo(t.stages[purchase.stage + 1].label)}
                 </button>
               ) : (
                 <div className="flex items-center gap-2 px-5 py-2.5 bg-emerald-100 text-emerald-800 font-semibold rounded-xl border border-emerald-200">
-                  ✅ Proceso completado en Procura
+                  {t.processCompleted}
                 </div>
               )}
             </div>
@@ -407,6 +636,7 @@
     //  VISTA TABLA
     // ═══════════════════════════════════════════════════════════════════════════
     function TableView({ purchases, onSelect }) {
+      const t = useLang();
       if (purchases.length === 0) return null;
       return (
         <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm">
@@ -414,11 +644,11 @@
             <thead>
               <tr className="bg-slate-800 text-slate-200 text-left">
                 <th className="px-4 py-3 font-semibold rounded-tl-2xl whitespace-nowrap">ID</th>
-                <th className="px-4 py-3 font-semibold">Título</th>
-                <th className="px-4 py-3 font-semibold whitespace-nowrap">Urgencia</th>
-                <th className="px-4 py-3 font-semibold whitespace-nowrap">Responsable</th>
-                <th className="px-4 py-3 font-semibold whitespace-nowrap">Creado</th>
-                <th className="px-4 py-3 font-semibold min-w-[180px]">Progreso</th>
+                <th className="px-4 py-3 font-semibold">{t.colTitle}</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">{t.colUrgency}</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">{t.colResponsible}</th>
+                <th className="px-4 py-3 font-semibold whitespace-nowrap">{t.colCreated}</th>
+                <th className="px-4 py-3 font-semibold min-w-[180px]">{t.colProgress}</th>
                 <th className="px-4 py-3 font-semibold rounded-tr-2xl"></th>
               </tr>
             </thead>
@@ -446,7 +676,7 @@
                       onClick={e => { e.stopPropagation(); onSelect(p); }}
                       className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors whitespace-nowrap"
                     >
-                      Ver detalle →
+                      {t.viewDetail}
                     </button>
                   </td>
                 </tr>
@@ -482,29 +712,24 @@
     }
 
     function KanbanView({ purchases, onSelect }) {
+      const t = useLang();
       return (
         <div className="flex gap-3 overflow-x-auto pb-4">
-          {STAGES.map((s) => {
-            const cards = purchases.filter(p => p.stage === s.id);
-            const isFinal = s.id === 6;
+          {t.stages.map((s, idx) => {
+            const isFinal = idx === 6;
+            const cards   = purchases.filter(p => p.stage === idx);
             return (
-              <div key={s.id} className="flex-shrink-0 w-52">
-                {/* Cabecera columna */}
-                <div className={`rounded-t-xl px-3 py-2.5 flex items-center gap-2
-                  ${isFinal ? 'bg-emerald-700' : 'bg-slate-700'}
-                `}>
-                  <span className="text-base">{s.icon}</span>
+              <div key={idx} className="flex-shrink-0 w-52">
+                <div className={`rounded-t-xl px-3 py-2.5 flex items-center gap-2 ${isFinal ? 'bg-emerald-700' : 'bg-slate-700'}`}>
+                  <span className="text-base">{STAGE_ICONS[idx]}</span>
                   <span className="text-white text-xs font-semibold flex-1 truncate">{s.label}</span>
                   <span className={`text-xs font-bold px-2 py-0.5 rounded-full
-                    ${isFinal
-                      ? 'bg-emerald-600 text-emerald-100'
-                      : 'bg-slate-600 text-slate-200'}
+                    ${isFinal ? 'bg-emerald-600 text-emerald-100' : 'bg-slate-600 text-slate-200'}
                   `}>{cards.length}</span>
                 </div>
-                {/* Cuerpo columna */}
                 <div className="bg-slate-100 rounded-b-xl min-h-[200px] p-2 space-y-2">
                   {cards.length === 0
-                    ? <p className="text-[11px] text-slate-400 text-center mt-6 italic select-none">Sin solicitudes</p>
+                    ? <p className="text-[11px] text-slate-400 text-center mt-6 italic select-none">{t.kanbanEmpty}</p>
                     : cards.map(p => <KanbanCard key={p.id} purchase={p} onSelect={onSelect} />)
                   }
                 </div>
@@ -516,9 +741,10 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  TARJETAS DE ESTADÍSTICAS
+    //  ESTADÍSTICAS
     // ═══════════════════════════════════════════════════════════════════════════
     function StatsBar({ purchases }) {
+      const t         = useLang();
       const total     = purchases.length;
       const completed = purchases.filter(p => p.stage === 6).length;
       const inProcess = total - completed;
@@ -528,11 +754,11 @@
         : 0;
 
       const stats = [
-        { label: 'Total Solicitudes', value: total,             icon: '📋', color: 'from-slate-700 to-slate-800' },
-        { label: 'En Progreso',       value: inProcess,         icon: '🔄', color: 'from-blue-600 to-blue-700' },
-        { label: 'Finalizadas',       value: completed,         icon: '✅', color: 'from-emerald-600 to-emerald-700' },
-        { label: 'Urgencia Alta',     value: urgAlta,           icon: '🔴', color: 'from-red-600 to-red-700' },
-        { label: 'Avance Promedio',   value: avgPct + '%',      icon: '📈', color: 'from-indigo-600 to-indigo-700' },
+        { label: t.statTotal,       value: total,        icon: '📋', color: 'from-slate-700 to-slate-800' },
+        { label: t.statInProgress,  value: inProcess,    icon: '🔄', color: 'from-blue-600 to-blue-700' },
+        { label: t.statCompleted,   value: completed,    icon: '✅', color: 'from-emerald-600 to-emerald-700' },
+        { label: t.statHighUrgency, value: urgAlta,      icon: '🔴', color: 'from-red-600 to-red-700' },
+        { label: t.statAvgProgress, value: avgPct + '%', icon: '📈', color: 'from-indigo-600 to-indigo-700' },
       ];
 
       return (
@@ -551,25 +777,23 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  FORMULARIO NUEVA SOLICITUD
+    //  MODAL NUEVA SOLICITUD
     // ═══════════════════════════════════════════════════════════════════════════
     function NewPurchaseModal({ onClose, onSave }) {
-      const [form, setForm] = useState({
-        title: '', urgency: 'Media', responsible: '', notes0: '',
-      });
+      const t   = useLang();
+      const [form, setForm] = useState({ title: '', urgency: 'Media', responsible: '', notes0: '' });
       const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
       const valid = form.title.trim() && form.responsible.trim();
 
       const handleSave = () => {
         if (!valid) return;
-        const today = new Date().toISOString().slice(0, 10);
         onSave({
           id: genId(),
           title: form.title.trim(),
           urgency: form.urgency,
           stage: 0,
           responsible: form.responsible.trim(),
-          createdAt: today,
+          createdAt: new Date().toISOString().slice(0, 10),
           notes: { 0: form.notes0.trim(), 1:'', 2:'', 3:'', 4:'', 5:'', 6:'' },
         });
         onClose();
@@ -580,15 +804,15 @@
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-blue-700 to-blue-600 text-white p-5 rounded-t-2xl flex items-center justify-between">
-              <h2 className="text-lg font-bold">+ Nueva Solicitud de Compra</h2>
+              <h2 className="text-lg font-bold">{t.newModalTitle}</h2>
               <button onClick={onClose} className="text-blue-200 hover:text-white text-xl">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Título de la compra *</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t.labelTitle}</label>
                 <input
                   type="text"
-                  placeholder="Ej: EPPs para trabajo en caliente"
+                  placeholder={t.placeholderTitle}
                   value={form.title}
                   onChange={e => set('title', e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -596,22 +820,22 @@
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Urgencia</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">{t.labelUrgency}</label>
                   <select
                     value={form.urgency}
                     onChange={e => set('urgency', e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option>Alta</option>
-                    <option>Media</option>
-                    <option>Baja</option>
+                    {['Alta','Media','Baja'].map(v => (
+                      <option key={v} value={v}>{t.urgency[v]}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Responsable *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">{t.labelResponsible}</label>
                   <input
                     type="text"
-                    placeholder="Nombre completo"
+                    placeholder={t.placeholderResponsible}
                     value={form.responsible}
                     onChange={e => set('responsible', e.target.value)}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -619,10 +843,10 @@
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Descripción de la necesidad</label>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">{t.labelNotes}</label>
                 <textarea
                   rows={3}
-                  placeholder="Detalle la necesidad identificada..."
+                  placeholder={t.placeholderNotes}
                   value={form.notes0}
                   onChange={e => set('notes0', e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
@@ -631,18 +855,16 @@
             </div>
             <div className="px-6 pb-6 flex gap-3 justify-end">
               <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 font-medium rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
-                Cancelar
+                {t.btnCancel}
               </button>
               <button
                 onClick={handleSave}
                 disabled={!valid}
                 className={`px-5 py-2 text-sm font-semibold rounded-xl transition-all
-                  ${valid
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'}
+                  ${valid ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}
                 `}
               >
-                Crear Solicitud
+                {t.btnCreate}
               </button>
             </div>
           </div>
@@ -654,15 +876,27 @@
     //  APP PRINCIPAL
     // ═══════════════════════════════════════════════════════════════════════════
     function App() {
-      const [purchases, setPurchases]   = useState(INITIAL_PURCHASES);
-      const [selected,  setSelected]    = useState(null);
-      const [showNew,   setShowNew]     = useState(false);
-      const [view,      setView]        = useState('table');   // 'table' | 'kanban'
+      const [lang, setLang] = useState(() => localStorage.getItem('ssoma-lang') || 'es');
+      const t = TRANSLATIONS[lang];
+
+      const [purchases, setPurchases]         = useState(INITIAL_PURCHASES);
+      const [selected,  setSelected]          = useState(null);
+      const [showNew,   setShowNew]           = useState(false);
+      const [view,      setView]              = useState('table');
       const [filterUrgency, setFilterUrgency] = useState('all');
       const [filterStage,   setFilterStage]   = useState('all');
-      const [search, setSearch] = useState('');
+      const [search, setSearch]               = useState('');
 
-      // ── Filtrado ────────────────────────────────────────────────────────────
+      const changeLang = (l) => {
+        setLang(l);
+        localStorage.setItem('ssoma-lang', l);
+        document.documentElement.lang = l === 'zh' ? 'zh-Hans' : l;
+      };
+
+      useEffect(() => {
+        document.documentElement.lang = lang === 'zh' ? 'zh-Hans' : lang;
+      }, []);
+
       const filtered = useMemo(() => purchases
         .filter(p => filterUrgency === 'all' || p.urgency === filterUrgency)
         .filter(p => filterStage   === 'all' || p.stage === Number(filterStage))
@@ -673,174 +907,154 @@
         ),
       [purchases, filterUrgency, filterStage, search]);
 
-      // ── Handlers ────────────────────────────────────────────────────────────
       const handleAdvance = (id) => {
-        setPurchases(prev => prev.map(p =>
-          p.id === id && p.stage < 6 ? { ...p, stage: p.stage + 1 } : p
-        ));
-        setSelected(prev =>
-          prev && prev.id === id ? { ...prev, stage: Math.min(prev.stage + 1, 6) } : prev
-        );
+        setPurchases(prev => prev.map(p => p.id === id && p.stage < 6 ? { ...p, stage: p.stage + 1 } : p));
+        setSelected(prev => prev && prev.id === id ? { ...prev, stage: Math.min(prev.stage + 1, 6) } : prev);
       };
 
-      const handleNewSave = (newP) => {
-        setPurchases(prev => [newP, ...prev]);
-      };
-
-      // ── Render ──────────────────────────────────────────────────────────────
       return (
-        <div className="min-h-screen bg-slate-50">
+        <LangContext.Provider value={lang}>
+          <div className="min-h-screen bg-slate-50">
 
-          {/* ── NAVBAR ── */}
-          <nav className="bg-slate-900 text-white px-6 py-4 flex items-center gap-4 shadow-lg sticky top-0 z-40">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-lg">
-                S
+            {/* ── NAVBAR ── */}
+            <nav className="bg-slate-900 text-white px-6 py-4 flex items-center gap-4 shadow-lg sticky top-0 z-40">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center font-extrabold text-white text-sm shadow-lg">S</div>
+                <div>
+                  <p className="font-bold text-sm leading-tight">SSOMA</p>
+                  <p className="text-slate-400 text-xs">{t.appSubtitle}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-sm leading-tight">SSOMA</p>
-                <p className="text-slate-400 text-xs">Gestión de Compras</p>
+              <div className="hidden md:flex items-center gap-1 ml-6 text-slate-400 text-sm">
+                <span>{t.navDashboard}</span>
+                <span className="mx-2 text-slate-600">›</span>
+                <span className="text-white font-medium">{t.navRequests}</span>
               </div>
-            </div>
-            <div className="hidden md:flex items-center gap-1 ml-6 text-slate-400 text-sm">
-              <span>Dashboard</span>
-              <span className="mx-2 text-slate-600">›</span>
-              <span className="text-white font-medium">Solicitudes</span>
-            </div>
-            <div className="ml-auto flex items-center gap-3">
-              <span className="hidden md:block text-slate-500 text-xs">Hoy: {new Date().toLocaleDateString('es-PE')}</span>
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold" title="Usuario actual">
-                U
+              <div className="ml-auto flex items-center gap-3">
+                <span className="hidden md:block text-slate-500 text-xs">
+                  {t.today}: {new Date().toLocaleDateString(t.locale)}
+                </span>
+                {/* ── LANGUAGE SWITCHER ── */}
+                <LangSwitcher lang={lang} setLang={changeLang} />
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold ml-1">U</div>
               </div>
-            </div>
-          </nav>
+            </nav>
 
-          <div className="max-w-screen-xl mx-auto px-4 md:px-6 py-6">
+            <div className="max-w-screen-xl mx-auto px-4 md:px-6 py-6">
 
-            {/* ── ENCABEZADO ── */}
-            <div className="flex items-start justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-2xl font-extrabold text-slate-800">Panel de Compras</h1>
-                <p className="text-slate-500 text-sm mt-1">
-                  Seguimiento de solicitudes del departamento SSOMA · {purchases.length} registros
-                </p>
-              </div>
-              <button
-                onClick={() => setShowNew(true)}
-                className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all active:scale-95"
-              >
-                + Nueva Solicitud
-              </button>
-            </div>
-
-            {/* ── ESTADÍSTICAS ── */}
-            <StatsBar purchases={purchases} />
-
-            {/* ── CONTROLES DE FILTRO ── */}
-            <div className="flex flex-col md:flex-row gap-3 mb-4">
-
-              {/* Búsqueda */}
-              <div className="relative flex-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">🔍</span>
-                <input
-                  type="text"
-                  placeholder="Buscar por título, ID o responsable…"
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              {/* Encabezado */}
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-slate-800">{t.pageTitle}</h1>
+                  <p className="text-slate-500 text-sm mt-1">{t.pageSubtitle} · {purchases.length} {t.records}</p>
+                </div>
+                <button
+                  onClick={() => setShowNew(true)}
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  {t.newRequest}
+                </button>
               </div>
 
-              {/* Filtro urgencia */}
-              <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                {[['all','Todos'],['Alta','Alta'],['Media','Media'],['Baja','Baja']].map(([v, l]) => (
-                  <button key={v} onClick={() => setFilterUrgency(v)}
+              {/* Stats */}
+              <StatsBar purchases={purchases} />
+
+              {/* Controles */}
+              <div className="flex flex-col md:flex-row gap-3 mb-4">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">🔍</span>
+                  <input
+                    type="text"
+                    placeholder={t.searchPlaceholder}
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Filtro urgencia */}
+                <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                  {[['all', t.filterAll], ['Alta','Alta'], ['Media','Media'], ['Baja','Baja']].map(([v, l]) => (
+                    <button key={v} onClick={() => setFilterUrgency(v)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                        ${filterUrgency === v ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
+                      `}>
+                      {v === 'all' ? l : t.urgency[v]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Filtro etapa */}
+                <select
+                  value={filterStage}
+                  onChange={e => setFilterStage(e.target.value)}
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">{t.allStages}</option>
+                  {t.stages.map((s, idx) => (
+                    <option key={idx} value={idx}>{STAGE_ICONS[idx]} {s.label}</option>
+                  ))}
+                </select>
+
+                {/* Toggle vista */}
+                <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                  <button onClick={() => setView('table')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                      ${filterUrgency === v ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
-                    `}>{l}
+                      ${view === 'table' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
+                    `}>{t.viewTable}
                   </button>
-                ))}
+                  <button onClick={() => setView('kanban')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+                      ${view === 'kanban' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
+                    `}>{t.viewKanban}
+                  </button>
+                </div>
               </div>
 
-              {/* Filtro etapa */}
-              <select
-                value={filterStage}
-                onChange={e => setFilterStage(e.target.value)}
-                className="border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">Todas las etapas</option>
-                {STAGES.map(s => (
-                  <option key={s.id} value={s.id}>{s.icon} {s.label}</option>
-                ))}
-              </select>
+              {/* Vistas */}
+              {view === 'table'
+                ? <TableView purchases={filtered} onSelect={setSelected} />
+                : <KanbanView purchases={filtered} onSelect={setSelected} />
+              }
 
-              {/* Toggle vista */}
-              <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                <button onClick={() => setView('table')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                    ${view === 'table' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
-                  `}>☰ Tabla
-                </button>
-                <button onClick={() => setView('kanban')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all
-                    ${view === 'kanban' ? 'bg-slate-800 text-white shadow' : 'text-slate-500 hover:text-slate-700'}
-                  `}>⊞ Kanban
-                </button>
+              {/* Estado vacío */}
+              {filtered.length === 0 && (
+                <div className="text-center py-20 text-slate-400">
+                  <p className="text-5xl mb-4">🔎</p>
+                  <p className="font-semibold text-slate-600">{t.emptyTitle}</p>
+                  <p className="text-sm mt-1">{t.emptyHint}</p>
+                </div>
+              )}
+
+              {/* Leyenda */}
+              <div className="mt-8 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{t.legendTitle}</p>
+                <div className="flex flex-wrap gap-2">
+                  {t.stages.map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-200 text-xs text-slate-600">
+                      <span className="w-4 h-4 rounded-full bg-slate-300 text-white flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                      <span>{STAGE_ICONS[idx]}</span>
+                      <span className="font-medium">{s.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500">
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> {t.legendCompleted}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-600"></span> {t.legendCurrent}</span>
+                  <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-slate-300"></span> {t.legendPending}</span>
+                </div>
               </div>
             </div>
 
-            {/* ── VISTAS ── */}
-            {view === 'table'
-              ? <TableView purchases={filtered} onSelect={setSelected} />
-              : <KanbanView purchases={filtered} onSelect={setSelected} />
-            }
-
-            {/* Estado vacío */}
-            {filtered.length === 0 && (
-              <div className="text-center py-20 text-slate-400">
-                <p className="text-5xl mb-4">🔎</p>
-                <p className="font-semibold text-slate-600">No se encontraron solicitudes</p>
-                <p className="text-sm mt-1">Prueba ajustando los filtros o el término de búsqueda</p>
-              </div>
+            {/* Modales */}
+            {selected && (
+              <DetailModal purchase={selected} onClose={() => setSelected(null)} onAdvance={handleAdvance} />
             )}
-
-            {/* ── LEYENDA DE ETAPAS (footer) ── */}
-            <div className="mt-8 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Referencia de Etapas</p>
-              <div className="flex flex-wrap gap-2">
-                {STAGES.map(s => (
-                  <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-200 text-xs text-slate-600">
-                    <span className="w-4 h-4 rounded-full bg-slate-300 text-white flex items-center justify-center text-[10px] font-bold">
-                      {s.id + 1}
-                    </span>
-                    <span>{s.icon}</span>
-                    <span className="font-medium">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500"></span> Completada</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-600"></span> Etapa actual</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-slate-300"></span> Pendiente</span>
-              </div>
-            </div>
+            {showNew && (
+              <NewPurchaseModal onClose={() => setShowNew(false)} onSave={p => setPurchases(prev => [p, ...prev])} />
+            )}
           </div>
-
-          {/* ── MODALES ── */}
-          {selected && (
-            <DetailModal
-              purchase={selected}
-              onClose={() => setSelected(null)}
-              onAdvance={handleAdvance}
-            />
-          )}
-          {showNew && (
-            <NewPurchaseModal
-              onClose={() => setShowNew(false)}
-              onSave={handleNewSave}
-            />
-          )}
-        </div>
+        </LangContext.Provider>
       );
     }
 
